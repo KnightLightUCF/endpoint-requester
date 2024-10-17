@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strapi API Endpoint Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+            max-width: 1200px;
+            margin: auto;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        h3 {
+            color: #555;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input,
+        textarea,
+        select,
+        button {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #ff6700;
+            outline: none;
+        }
+
+        button {
+            background-color: #ff6700;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            padding: 10px 15px;
+        }
+
+        button:hover {
+            background-color: #cc5200;
+        }
+
+        .section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .flex-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .flex-container>div {
+            flex: 1;
+        }
+
+        .login-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container input {
+            flex: 1;
+        }
+
+        .jwt-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .jwt-container input {
+            flex: 1;
+        }
+
+        .request-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 2;
+        }
+
+        .response-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            overflow-y: auto;
+            max-height: 400px;
+            height: auto;
+            flex: 3;
+            white-space: pre-wrap;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .response-container pre {
+            margin-top: 0;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .settings-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ff6700;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .settings-button:hover {
+            background-color: #cc5200;
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .popup h3 {
+            margin-top: 0;
+        }
+
+        .popup .popup-close {
+            margin-top: 20px;
+            display: block;
+            text-align: center;
+        }
+
+        .popup button {
+            background-color: #ff6700;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .scroll-visible {
+            overflow-y: scroll;
+        }
+    </style>
+    <script>
+        let jwtToken = localStorage.getItem("jwtToken") || "";
+        let baseURL = localStorage.getItem("baseURL") || "http://localhost:1337";
+        let wrapOutput = true;
+
+        window.onload = function () {
+            document.getElementById("jwtTokenField").value = jwtToken;
+            document.getElementById("baseURL").value = baseURL;
+            document.getElementById("wrapOutput").checked = wrapOutput;
+        }
+
+        function saveBaseURL() {
+            baseURL = document.getElementById("baseURL").value;
+            localStorage.setItem("baseURL", baseURL);
+        }
+
+        function toggleWrapOutput() {
+            wrapOutput = document.getElementById("wrapOutput").checked;
+            localStorage.setItem("wrapOutput", wrapOutput);
+            const responseElement = document.getElementById("response");
+            responseElement.style.whiteSpace = wrapOutput ? 'pre-wrap' : 'pre';
+        }
+
+        function togglePopup() {
+            document.getElementById("settingsPopup").classList.toggle("hidden");
+            document.getElementById("overlay").classList.toggle("hidden");
+        }
+
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById("password");
+            passwordField.type = passwordField.type === "password" ? "text" : "password";
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const url = `${baseURL}/api/auth/local`;
+
+            const data = {
+                identifier: username,
+                password: password
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const responseData = await response.json();
+                if (response.ok) {
+                    jwtToken = responseData.jwt;
+                    document.getElementById("response").textContent = `Login successful! JWT Token: ${jwtToken}`;
+                    localStorage.setItem("jwtToken", jwtToken);
+                    document.getElementById("jwtTokenField").value = jwtToken;
+                } else {
+                    document.getElementById("response").textContent = `Login failed: ${responseData.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                document.getElementById("response").textContent = `Error: ${error}`;
+            }
+        }
+
+        async function sendRequest() {
+            const method = document.getElementById("method").value;
+            const endpoint = document.getElementById("endpointUrl").value;
+            const url = `${baseURL}${endpoint}`;
+            const payload = document.getElementById("payload").value;
+
+            const headers = {};
+            if (jwtToken) {
+                headers["Authorization"] = `Bearer ${jwtToken}`;
+            }
+            headers["Content-Type"] = "application/json";
+
+            try {
+                let response;
+                if (method === "GET") {
+                    response = await fetch(url, {
+                        method: method,
+                        headers: headers
+                    });
+                } else {
+                    response = await fetch(url, {
+                        method: method,
+                        headers: headers,
+                        body: payload ? JSON.stringify(JSON.parse(payload)) : null
+                    });
+                }
+                const responseText = await response.text();
+
+                // Attempt to parse and pretty print JSON
+                let formattedResponse;
+                try {
+                    const jsonResponse = JSON.parse(responseText);
+                    formattedResponse = JSON.stringify(jsonResponse, null, 2);
+                } catch (error) {
+                    // If it's not JSON, just display the raw text
+                    formattedResponse = responseText;
+                }
+
+                const responseElement = document.getElementById("response");
+                responseElement.textContent = `Response: ${response.status}\n${formattedResponse}`;
+                responseElement.style.maxHeight = 'none';
+                responseElement.style.height = `${responseElement.scrollHeight}px`;
+            } catch (error) {
+                document.getElementById("response").textContent = `Error: ${error}`;
+            }
+        }
+
+        function eraseToken() {
+            jwtToken = "";
+            localStorage.removeItem("jwtToken");
+            document.getElementById("jwtTokenField").value = "";
+            document.getElementById("response").textContent = "JWT Token erased.";
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Strapi API Endpoint Tester</h1>
+    <button class="settings-button" onclick="togglePopup()">Settings</button>
+
+    <div id="overlay" class="overlay hidden" onclick="togglePopup()"></div>
+
+    <div id="settingsPopup" class="popup hidden">
+        <h3>Settings</h3>
+        <label for="baseURL">Base URL:</label>
+        <input type="text" id="baseURL" value="http://localhost:1337" onchange="saveBaseURL()" />
+        <label>
+            <input type="checkbox" id="wrapOutput" checked onchange="toggleWrapOutput()" /> Wrap output response
+        </label>
+        <button class="popup-close" onclick="togglePopup()">Close</button>
+    </div>
+
+    <div class="login-container section">
+        <input type="text" id="username" placeholder="Username/Email" />
+        <input type="password" id="password" placeholder="Password" />
+        <button onclick="togglePasswordVisibility()">Toggle Visibility</button>
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div class="jwt-container section">
+        <input type="text" id="jwtTokenField" placeholder="JWT Token" />
+        <button onclick="eraseToken()">Erase Token</button>
+    </div>
+
+    <div class="flex-container">
+        <div class="section request-container">
+            <h3>Send Request</h3>
+            <label for="method">HTTP Method:</label>
+            <select id="method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+            <label for="endpointUrl">Endpoint Path:</label>
+            <input type="text" id="endpointUrl" placeholder="/api/your-endpoint" />
+            <label for="payload">Payload (JSON):</label>
+            <textarea id="payload" rows="8" placeholder=""></textarea>
+            <button onclick="sendRequest()">Send Request</button>
+        </div>
+
+        <div class="section response-container scroll-visible">
+            <h3>Response</h3>
+            <pre id="response"></pre>
+        </div>
+    </div>
+</body>
+
+</html>
