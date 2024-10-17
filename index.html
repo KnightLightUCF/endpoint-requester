@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strapi API Endpoint Tester</title>
+    <title>Strapi API Tester</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -192,6 +192,22 @@
         .scroll-visible {
             overflow-y: scroll;
         }
+
+        .label-input-inline {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .label-input-inline label {
+            width: 120px;
+        }
+
+        .label-input-inline select,
+        .label-input-inline input {
+            flex: 1;
+        }
     </style>
     <script>
         let jwtToken = localStorage.getItem("jwtToken") || "";
@@ -316,7 +332,7 @@
 </head>
 
 <body>
-    <h1>Strapi API Endpoint Tester</h1>
+    <h1>Strapi API Tester</h1>
     <button class="settings-button" onclick="togglePopup()">Settings</button>
 
     <div id="overlay" class="overlay hidden" onclick="togglePopup()"></div>
@@ -331,6 +347,38 @@
         <button class="popup-close" onclick="togglePopup()">Close</button>
     </div>
 
+    <div class="flex-container">
+        <div class="section request-container">
+            <h3>Send Request</h3>
+
+            <div class="label-input-inline">
+                <label for="method">HTTP Method:</label>
+                <select id="method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+
+            <div class="label-input-inline">
+                <label for="endpointUrl">Endpoint Path:</label>
+                <input type="text" id="endpointUrl" placeholder="/api/your-endpoint" />
+            </div>
+
+            <label for="payload">Payload (JSON):</label>
+            <textarea id="payload" rows="8" placeholder=""></textarea>
+
+            <button onclick="sendRequest()">Send Request</button>
+        </div>
+
+        <div class="section response-container scroll-visible">
+            <h3>Response</h3>
+            <pre id="response"></pre>
+        </div>
+    </div>
+
+
     <div class="login-container section">
         <input type="text" id="username" placeholder="Username/Email" />
         <input type="password" id="password" placeholder="Password" />
@@ -343,28 +391,6 @@
         <button onclick="eraseToken()">Erase Token</button>
     </div>
 
-    <div class="flex-container">
-        <div class="section request-container">
-            <h3>Send Request</h3>
-            <label for="method">HTTP Method:</label>
-            <select id="method">
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="DELETE">DELETE</option>
-            </select>
-            <label for="endpointUrl">Endpoint Path:</label>
-            <input type="text" id="endpointUrl" placeholder="/api/your-endpoint" />
-            <label for="payload">Payload (JSON):</label>
-            <textarea id="payload" rows="8" placeholder=""></textarea>
-            <button onclick="sendRequest()">Send Request</button>
-        </div>
-
-        <div class="section response-container scroll-visible">
-            <h3>Response</h3>
-            <pre id="response"></pre>
-        </div>
-    </div>
 </body>
 
 </html>
